@@ -6,23 +6,58 @@
     <h1 class="display-4">To-Do App</h1>
     <p class="lead">Just another to-do app.</p>
   </div>
-
-  <div class="row">
-    <div class="col-md-12">
-      <h2>Items</h2>
-      <ul class="list-group mb-4">
-          {%for item in items%}
-              <li>{{item.title}}</li>
-          {%endfor%}
-      </ul>
+  <div class="my-3 p-3 bg-white rounded shadow-sm">
+    <h3 class="border-bottom border-gray pb-2 mb-0">Add Card</h3>
+    <form action="/" method="post">
+      <div class="input-group">
+        <input type="text" class="form-control" name="card_name">
+        <div class="input-group-append">
+          <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Add</button>
+          <div class="dropdown-menu">
+            {% for move_list in lists %}
+            <button class="dropdown-item" name="submit_button" value="{{move_list['id']}}" type="submit">{{move_list['name']}}</button>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+  {% for list in lists %}
+    <div class="my-3 p-3 bg-white rounded shadow-sm">
+      <h3 class="border-bottom border-gray pb-2 mb-0">{{list['name']}}</h3>
+        {% for card in cards %}
+          {% if list['id'] == card['idList'] %}
+            <div class="media text-muted pt-3">
+              <div class="media-body pb-3 mb-0 small lh-125 border-bottom border-gray">
+                <div class="d-flex justify-content-between align-items-center w-100">
+                  <h6 class="text-gray-dark">{{card['name']}}</h6>
+                    <div class="dropdown">
+                      <button class="btn btn-secondary btn-sm" type="button" data-toggle="collapse" data-target="#collapse{{card['id']}}" aria-expanded="false" aria-controls="collapseExample">
+                        Expand
+                      </button>
+                      <button class="btn btn-secondary btn-sm dropdown-toggle" type="button" id="dropdownMenuButton_{{card['id']}}" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Actions
+                      </button>
+                      <div class="dropdown-menu" aria-labelledby="dropdownMenuButton_{{card['id']}}">
+                        {% for move_list in lists %}
+                          {% if move_list['id'] != card['idList'] %}
+                            <a class="dropdown-item" href="/move/{{card['id']}}/{{move_list['id']}}">Move to: {{move_list['name']}}</a>
+                          {% endif %}
+                        {% endfor %}
+                        <div class="dropdown-divider"></div>
+                        <a class="dropdown-item" href="/remove/{{card['id']}}">Remove</a>
+                      </div>
+                    </div>
+                </div>
+                <div class="collapse" id="collapse{{card['id']}}">
+                  <small><b>Description:</b> {{card['desc']}}</small>
+                  <br>
+                  <small><b>Due:</b> {{card['due']}}</small>
+                </div>
+              </div>
+            </div>
+          {% endif %}
+        {% endfor %}
     </div>
-  </div>
-
-  <form action="/" method="post">
-  <div class="col-md-12">
-    <label for="title">New To Do: </label>
-    <input type="text" name="title" id="title" required>
-    <button class="favorite styled" type="submit"> ADD </button>
-  </div>
-  </form>
+  {% endfor %}
 {% endblock %}
