@@ -1,69 +1,72 @@
-from flask import session
+import requests, os, datetime, dotenv
+ 
+class List:  
+    def __init__(self, id, name):  
+        self.id = id  
+        self.name = name
 
-_DEFAULT_ITEMS = [
-    { 'id': 1, 'status': 'Not Started', 'title': 'List saved todo items' },
-    { 'id': 2, 'status': 'Not Started', 'title': 'Allow new items to be added' }
-]
+class Card:
 
+    def __init__(self, id, name, idList, desc, due):
+        self.id = id
+        self.name = name
+        self.idList = idList
+        self.desc = desc
+        try:
+            self.due = self.due = datetime.strptime(due,'%Y-%m-%dT%H:%M:%S.%fZ')
+        except:
+            self.due = None
 
-def get_items():
-    """
-    Fetches all saved items from the session.
+def getAuth():
+    #Retrieves Authorization
+    
+    auth = []
+    auth.append(os.getenv('TRELLO_KEY'))
+    auth.append(os.getenv('TRELLO_TOKEN'))
 
-    Returns:
-        list: The list of saved items.
-    """
-    return session.get('items', _DEFAULT_ITEMS)
+        
+    return auth
 
+def getBoardId():
+    #Retrieves Board ID
+    boardID = os.getenv('BOARD_ID')
+    return boardID
 
-def get_item(id):
-    """
-    Fetches the saved item with the specified ID.
+def getLists():
+    #GETS ALL lists by board ID
+    auth = getAuth()
+    boardID = getBoardId()
+    lists = []
 
-    Args:
-        id: The ID of the item.
+    for list in(requests.get(f'https://api.trello.com/1/boards/{boardID}/lists?key={auth[0]}&token={auth[1]}')).json():
+        lists.append(List(list['id'],list['name']))
+    return lists
 
-    Returns:
-        item: The saved item, or None if no items match the specified ID.
-    """
-    items = get_items()
-    return next((item for item in items if item['id'] == int(id)), None)
+def getCards():
+    #GETS ALL cards by board ID
+    auth  = getAuth()
+    boardID = getBoardId()
+    
+    cards = []
+    for card in (requests.get(f'https://api.trello.com/1/boards/{boardID}/cards?key={auth[0]}&token={auth[1]}')).json():
+        cards.append(Card(card['id'],card['name'],card['idList'],card['desc'],card['due']))
+    return cards
 
+def moveCard(card_id, listID):
+    #MOVEs card by list ID
+    auth = getAuth()
+    move= requests.put(f'https://api.trello.com/1/cards/{card_id}?key={auth[0]}&token={auth[1]}&idList={listID}').json()
 
-def add_item(title):
-    """
-    Adds a new item with the specified title to the session.
+    return move
 
-    Args:
-        title: The title of the item.
+def addCard(name, listId):
+    #ADDs card by list ID
+    auth = getAuth()
+    add= requests.post(f'https://api.trello.com/1/cards/?key={auth[0]}&token={auth[1]}&idList={listId}&name={name}').json()
+    return add
 
-    Returns:
-        item: The saved item.
-    """
-    items = get_items()
-
-    # Determine the ID for the item based on that of the previously added item
-    id = items[-1]['id'] + 1 if items else 0
-
-    item = { 'id': id, 'title': title, 'status': 'Not Started' }
-
-    # Add the item to the list
-    items.append(item)
-    session['items'] = items
-
-    return item
-
-
-def save_item(item):
-    """
-    Updates an existing item in the session. If no existing item matches the ID of the specified item, nothing is saved.
-
-    Args:
-        item: The item to save.
-    """
-    existing_items = get_items()
-    updated_items = [item if item['id'] == existing_item['id'] else existing_item for existing_item in existing_items]
-
-    session['items'] = updated_items
-
-    return item
+def removeCard(card_id):
+    #DELETEs card by card ID 
+    auth = getAuth()
+    delete= requests.put(f'https://api.trello.com/1/cards/{card_id}?key={auth[0]}&token={auth[1]}').json()
+    return delete
